@@ -93,8 +93,72 @@ class WaterAnimation {
     }
 }
 
-// Initialize water animation when the page loads
+// Function to position mood stars
+function positionMoodStars() {
+    const moodContainer = document.querySelector('.mood');
+    const moodStars = moodContainer.querySelectorAll('img');
+    const minDistance = 100; // Minimum distance between stars in pixels
+    const moonElement = document.querySelector('.moon');
+    const moonRect = moonElement.getBoundingClientRect();
+    const moonPadding = 50; // Extra padding around moon
+    
+    // Get container dimensions
+    const containerWidth = window.innerWidth;
+    const containerHeight = window.innerHeight;
+    
+    // Keep track of placed stars
+    const placedStars = [];
+    
+    moodStars.forEach(star => {
+        let attempts = 0;
+        const maxAttempts = 100;
+        let validPosition = false;
+        
+        while (!validPosition && attempts < maxAttempts) {
+            // Random position
+            const x = Math.random() * (containerWidth - 50); // 50px padding from edges
+            const y = Math.random() * (containerHeight * 0.6); // Only in top 60% of screen
+            
+            // Check if position is valid (not too close to other stars and not overlapping moon)
+            const tooCloseToOtherStar = placedStars.some(pos => {
+                const dx = x - pos.x;
+                const dy = y - pos.y;
+                return Math.sqrt(dx * dx + dy * dy) < minDistance;
+            });
+            
+            const tooCloseToMoon = (
+                x + moonPadding > moonRect.left &&
+                x - moonPadding < moonRect.right &&
+                y + moonPadding > moonRect.top &&
+                y - moonPadding < moonRect.bottom
+            );
+            
+            if (!tooCloseToOtherStar && !tooCloseToMoon) {
+                star.style.position = 'absolute';
+                star.style.left = `${x}px`;
+                star.style.top = `${y}px`;
+                star.style.width = '60px'; // Doubled size from 30px to 60px
+                star.style.height = '60px'; // Doubled size from 30px to 60px
+                star.style.zIndex = '3'; // Above waves but below moon
+                star.style.filter = 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.5))';
+                
+                placedStars.push({ x, y });
+                validPosition = true;
+            }
+            
+            attempts++;
+        }
+    });
+}
+
+// Initialize everything when the page loads
 window.addEventListener('load', () => {
     createStars();
     new WaterAnimation();
+    positionMoodStars();
+    
+    // Reposition mood stars on window resize
+    window.addEventListener('resize', () => {
+        positionMoodStars();
+    });
 }); 
