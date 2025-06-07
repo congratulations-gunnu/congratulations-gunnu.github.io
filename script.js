@@ -29,7 +29,7 @@ class WaterAnimation {
     constructor() {
         this.canvas = document.getElementById('waterCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.waveHeight = 20;
+        this.waveHeight = 20; // Gentle waves
         this.waveSpeed = 0.02;
         this.waveFrequency = 0.02;
         this.waterColor = '#1a4b8c';
@@ -43,7 +43,7 @@ class WaterAnimation {
 
     resize() {
         this.canvas.width = window.innerWidth;
-        this.canvas.height = 200;
+        this.canvas.height = Math.max(window.innerHeight * 0.45, 350); // Keep water canvas tall
     }
 
     animate() {
@@ -55,7 +55,8 @@ class WaterAnimation {
         this.ctx.moveTo(0, this.canvas.height); // Start at bottom left
         for (let i = 0; i <= this.numberOfPoints; i++) {
             const x = (i / this.numberOfPoints) * this.canvas.width;
-            const y = this.canvas.height - 40 - Math.sin(x * this.waveFrequency + this.time) * this.waveHeight;
+            const baseLevel = this.canvas.height - 180; // Higher water level (closer to middle)
+            const y = baseLevel - Math.sin(x * this.waveFrequency + this.time) * this.waveHeight;
             if (i === 0) {
                 this.ctx.lineTo(x, y);
             } else {
@@ -78,7 +79,8 @@ class WaterAnimation {
         this.ctx.beginPath();
         for (let i = 0; i <= this.numberOfPoints; i++) {
             const x = (i / this.numberOfPoints) * this.canvas.width;
-            const y = this.canvas.height - 40 - Math.sin(x * this.waveFrequency + this.time) * this.waveHeight;
+            const baseLevel = this.canvas.height - 180;
+            const y = baseLevel - Math.sin(x * this.waveFrequency + this.time) * this.waveHeight;
             if (i === 0) {
                 this.ctx.moveTo(x, y);
             } else {
@@ -97,57 +99,23 @@ class WaterAnimation {
 function positionMoodStars() {
     const moodContainer = document.querySelector('.mood');
     const moodStars = moodContainer.querySelectorAll('img');
-    const minDistance = 100; // Minimum distance between stars in pixels
-    const moonElement = document.querySelector('.moon');
-    const moonRect = moonElement.getBoundingClientRect();
-    const moonPadding = 50; // Extra padding around moon
-    
-    // Get container dimensions
-    const containerWidth = window.innerWidth;
-    const containerHeight = window.innerHeight;
-    
-    // Keep track of placed stars
-    const placedStars = [];
-    
-    moodStars.forEach(star => {
-        let attempts = 0;
-        const maxAttempts = 100;
-        let validPosition = false;
-        
-        while (!validPosition && attempts < maxAttempts) {
-            // Random position
-            const x = Math.random() * (containerWidth - 50); // 50px padding from edges
-            const y = Math.random() * (containerHeight * 0.6); // Only in top 60% of screen
-            
-            // Check if position is valid (not too close to other stars and not overlapping moon)
-            const tooCloseToOtherStar = placedStars.some(pos => {
-                const dx = x - pos.x;
-                const dy = y - pos.y;
-                return Math.sqrt(dx * dx + dy * dy) < minDistance;
-            });
-            
-            const tooCloseToMoon = (
-                x + moonPadding > moonRect.left &&
-                x - moonPadding < moonRect.right &&
-                y + moonPadding > moonRect.top &&
-                y - moonPadding < moonRect.bottom
-            );
-            
-            if (!tooCloseToOtherStar && !tooCloseToMoon) {
-                star.style.position = 'absolute';
-                star.style.left = `${x}px`;
-                star.style.top = `${y}px`;
-                star.style.width = '60px'; // Doubled size from 30px to 60px
-                star.style.height = '60px'; // Doubled size from 30px to 60px
-                star.style.zIndex = '3'; // Above waves but below moon
-                star.style.filter = 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.5))';
-                
-                placedStars.push({ x, y });
-                validPosition = true;
-            }
-            
-            attempts++;
-        }
+    // Fixed positions for each mood star (percentages of viewport)
+    const fixedPositions = [
+        { left: '18%', top: '22%' }, // sick
+        { left: '38%', top: '55%' }, // angry
+        { left: '50%', top: '35%' }, // anxious
+        { left: '62%', top: '50%' }, // happy
+        { left: '80%', top: '30%' }, // sad
+    ];
+    moodStars.forEach((star, i) => {
+        const pos = fixedPositions[i];
+        star.style.position = 'absolute';
+        star.style.left = pos.left;
+        star.style.top = pos.top;
+        star.style.width = '60px';
+        star.style.height = '60px';
+        star.style.zIndex = '3';
+        star.style.filter = 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.5))';
     });
 }
 
