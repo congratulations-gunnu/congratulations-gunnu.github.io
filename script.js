@@ -106,6 +106,7 @@ function positionMoodStars() {
         { left: '50%', top: '35%' }, // anxious
         { left: '62%', top: '50%' }, // happy
         { left: '80%', top: '30%' }, // sad
+        { left: '25%', top: '45%' }, // beautiful
     ];
     moodStars.forEach((star, i) => {
         const pos = fixedPositions[i];
@@ -122,24 +123,28 @@ function positionMoodStars() {
 // Scroll content data
 const scrollContent = {
     'sick': {
-        image: 'assets/sick-scroll.png',
+        image: 'assets/blue.jpeg',
         text: 'When I feel sick, I need extra care and rest. It\'s okay to take time to heal and recover.'
     },
     'angry': {
-        image: 'assets/angry-scroll.png',
+        image: 'assets/gulabi.jpeg',
         text: 'Anger is a natural emotion. Let\'s take deep breaths and find a calm way to express our feelings.'
     },
     'anxious': {
-        image: 'assets/anxious-scroll.png',
+        image: 'assets/pretty.jpeg',
         text: 'Anxiety can be overwhelming. Remember to breathe and know that this feeling will pass.'
     },
     'happy': {
-        image: 'assets/happy-scroll.png',
+        image: 'assets/cutee.png',
         text: 'Joy fills my heart! Let\'s share this happiness with others and create beautiful memories.'
     },
     'sad': {
-        image: 'assets/sad-scroll.png',
+        image: 'assets/retro.jpeg',
         text: 'Sadness is a part of life. It\'s okay to feel this way, and I\'m here to support you.'
+    },
+    'beautiful': {
+        image: 'assets/collage.jpeg',
+        text: 'You are beautiful inside and out. Let\'s celebrate your unique beauty and shine!'
     }
 };
 
