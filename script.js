@@ -119,11 +119,92 @@ function positionMoodStars() {
     });
 }
 
+// Scroll content data
+const scrollContent = {
+    'sick': {
+        image: 'assets/sick-scroll.png',
+        text: 'When I feel sick, I need extra care and rest. It\'s okay to take time to heal and recover.'
+    },
+    'angry': {
+        image: 'assets/angry-scroll.png',
+        text: 'Anger is a natural emotion. Let\'s take deep breaths and find a calm way to express our feelings.'
+    },
+    'anxious': {
+        image: 'assets/anxious-scroll.png',
+        text: 'Anxiety can be overwhelming. Remember to breathe and know that this feeling will pass.'
+    },
+    'happy': {
+        image: 'assets/happy-scroll.png',
+        text: 'Joy fills my heart! Let\'s share this happiness with others and create beautiful memories.'
+    },
+    'sad': {
+        image: 'assets/sad-scroll.png',
+        text: 'Sadness is a part of life. It\'s okay to feel this way, and I\'m here to support you.'
+    }
+};
+
+// Function to handle scroll animations
+function initScrollAnimations() {
+    const moodStars = document.querySelectorAll('.mood img');
+    const scrollContainer = document.querySelector('.scroll-container');
+    const scrollOverlay = document.querySelector('.scroll-overlay');
+    const closeButton = document.querySelector('.close-scroll');
+    const scrollImage = document.querySelector('.scroll-image');
+    const scrollText = document.querySelector('.scroll-text');
+
+    // Typewriter effect function
+    async function typeWriter(text, element, speed = 50) {
+        element.textContent = '';
+        for (let i = 0; i < text.length; i++) {
+            element.textContent += text[i];
+            await new Promise(resolve => setTimeout(resolve, speed));
+        }
+    }
+
+    // Function to open scroll
+    async function openScroll(emotion) {
+        const content = scrollContent[emotion];
+        if (!content) return;
+
+        // Update scroll content
+        scrollImage.src = content.image;
+        scrollText.textContent = ''; // Clear text before animation
+
+        // Show scroll with animation
+        scrollOverlay.classList.add('active');
+        scrollContainer.classList.add('active');
+
+        // Start typewriter effect after a small delay
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await typeWriter(content.text, scrollText);
+    }
+
+    // Function to close scroll
+    function closeScroll() {
+        scrollContainer.classList.remove('active');
+        scrollOverlay.classList.remove('active');
+        scrollText.textContent = ''; // Clear text when closing
+    }
+
+    // Add click handlers to mood stars
+    moodStars.forEach(star => {
+        star.addEventListener('click', (e) => {
+            const emotion = star.src.split('/').pop().split('.')[0];
+            openScroll(emotion);
+        });
+    });
+
+    // Close scroll when clicking close button or overlay
+    closeButton.addEventListener('click', closeScroll);
+    scrollOverlay.addEventListener('click', closeScroll);
+}
+
 // Initialize everything when the page loads
 window.addEventListener('load', () => {
     createStars();
     new WaterAnimation();
     positionMoodStars();
+    initScrollAnimations();
     
     // Reposition mood stars on window resize
     window.addEventListener('resize', () => {
