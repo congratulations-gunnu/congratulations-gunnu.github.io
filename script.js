@@ -186,7 +186,10 @@ function initScrollAnimations() {
         // Play moon audio if it's the moon (start immediately)
         if (emotion === 'moon') {
             isMoonOpen = true;
-            moonAudio.play();
+            moonAudio.currentTime = 0;
+            moonAudio.play().catch((err) => {
+                console.log('moonAudio play error:', err);
+            });
         }
 
         // Update scroll content
@@ -228,16 +231,6 @@ function initScrollAnimations() {
             const emotion = star.src.split('/').pop().split('.')[0];
             openScroll(emotion);
         });
-        // If this is the moon, add a click handler to stop the song
-        if (star.src.includes('moon')) {
-            star.addEventListener('click', (e) => {
-                if (isMoonOpen) {
-                    moonAudio.pause();
-                    moonAudio.currentTime = 0;
-                    isMoonOpen = false;
-                }
-            });
-        }
     });
 
     // Close scroll when clicking close button or overlay
