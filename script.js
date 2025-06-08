@@ -105,16 +105,22 @@ function positionMoodStars() {
         { left: '38%', top: '55%' }, // angry
         { left: '50%', top: '35%' }, // anxious
         { left: '62%', top: '50%' }, // happy
-        { left: '80%', top: '30%' }, // sad
+        { left: '80%', top: '50%' }, // sad
         { left: '25%', top: '45%' }, // beautiful
+        { left: '75%', top: '15%' }, // moon
     ];
     moodStars.forEach((star, i) => {
         const pos = fixedPositions[i];
         star.style.position = 'absolute';
         star.style.left = pos.left;
         star.style.top = pos.top;
-        star.style.width = '60px';
-        star.style.height = '60px';
+        if (i === 6) { // moon
+            star.style.width = '180px';
+            star.style.height = '180px';
+        } else {
+            star.style.width = '60px';
+            star.style.height = '60px';
+        }
         star.style.zIndex = '3';
         star.style.filter = 'drop-shadow(0 0 5px rgba(255, 255, 255, 0.5))';
     });
@@ -124,18 +130,17 @@ function positionMoodStars() {
 const scrollContent = {
     'sick': {
         image: 'assets/blue.jpeg',
-        text: 'When I feel sick, I need extra care and rest. It\'s okay to take time to heal and recover.'
-    },
+        text: 'I hope you never get to open this but as I am w'  },
     'angry': {
         image: 'assets/gulabi.jpeg',
-        text: 'Anger is a natural emotion. Let\'s take deep breaths and find a calm way to express our feelings.'
+        text: 'Hiiiiii, did you have some water today?'
     },
     'anxious': {
         image: 'assets/pretty.jpeg',
         text: 'Anxiety can be overwhelming. Remember to breathe and know that this feeling will pass.'
     },
     'happy': {
-        image: 'assets/cutee.png',
+        image: 'assets/cutee.jpg',
         text: 'Joy fills my heart! Let\'s share this happiness with others and create beautiful memories.'
     },
     'sad': {
@@ -145,6 +150,10 @@ const scrollContent = {
     'beautiful': {
         image: 'assets/collage.jpeg',
         text: 'You are beautiful inside and out. Let\'s celebrate your unique beauty and shine!'
+    },
+    'moon': {
+        image: 'assets/cutee.jpg',
+        text: 'The moon whispers secrets of the night, bringing peace and tranquility to your soul.'
     }
 };
 
@@ -156,6 +165,9 @@ function initScrollAnimations() {
     const closeButton = document.querySelector('.close-scroll');
     const scrollImage = document.querySelector('.scroll-image');
     const scrollText = document.querySelector('.scroll-text');
+    const moonAudio = new Audio('assets/moon.mp3');
+    moonAudio.loop = true;
+    let isMoonOpen = false;
 
     // Typewriter effect function
     async function typeWriter(text, element, speed = 50) {
@@ -170,6 +182,12 @@ function initScrollAnimations() {
     async function openScroll(emotion) {
         const content = scrollContent[emotion];
         if (!content) return;
+
+        // Play moon audio if it's the moon (start immediately)
+        if (emotion === 'moon') {
+            isMoonOpen = true;
+            moonAudio.play();
+        }
 
         // Update scroll content
         scrollImage.src = content.image;
@@ -195,6 +213,13 @@ function initScrollAnimations() {
         scrollOverlay.style.visibility = 'hidden';
         scrollOverlay.style.opacity = '0';
         scrollText.textContent = ''; // Clear text when closing
+        
+        // Stop moon audio if it was playing
+        if (isMoonOpen) {
+            moonAudio.pause();
+            moonAudio.currentTime = 0;
+            isMoonOpen = false;
+        }
     }
 
     // Add click handlers to mood stars
@@ -203,11 +228,28 @@ function initScrollAnimations() {
             const emotion = star.src.split('/').pop().split('.')[0];
             openScroll(emotion);
         });
+        // If this is the moon, add a click handler to stop the song
+        if (star.src.includes('moon')) {
+            star.addEventListener('click', (e) => {
+                if (isMoonOpen) {
+                    moonAudio.pause();
+                    moonAudio.currentTime = 0;
+                    isMoonOpen = false;
+                }
+            });
+        }
     });
 
     // Close scroll when clicking close button or overlay
     closeButton.addEventListener('click', closeScroll);
     scrollOverlay.addEventListener('click', closeScroll);
+
+    // Also stop audio when pressing Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeScroll();
+        }
+    });
 }
 
 // Initialize everything when the page loads

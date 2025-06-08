@@ -46,12 +46,15 @@ body {
     z-index: 2;
 }
 
+/* Remove or comment out this block to avoid conflict */
+/*
 .moon img {
     width: 150px;
     height: auto;
     filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
     animation: moonGlow 4s infinite ease-in-out;
 }
+*/
 
 @keyframes moonGlow {
     0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)); }
@@ -251,6 +254,19 @@ body {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
 }
 
+/* Moon specific styling */
+.mood img[src*="moon"] {
+    width: 300px;
+    height: auto;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
+    animation: moonGlow 4s infinite ease-in-out;
+}
+
+@keyframes moonGlow {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)); }
+    50% { filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8)); }
+}
+
 /* Scroll Styles */
 .scroll-container {
     position: fixed;
@@ -447,4 +463,17 @@ body {
 .scroll-overlay.active {
     opacity: 1;
     pointer-events: all;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mood img[src*="moon"] {
+        width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mood img[src*="moon"] {
+        width: 150px;
+    }
 } 
