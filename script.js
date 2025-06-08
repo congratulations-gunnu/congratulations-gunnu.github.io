@@ -176,8 +176,11 @@ function initScrollAnimations() {
         scrollText.textContent = ''; // Clear text before animation
 
         // Show scroll with animation
-        scrollOverlay.classList.add('active');
-        scrollContainer.classList.add('active');
+        scrollOverlay.style.visibility = 'visible';
+        scrollOverlay.style.opacity = '1';
+        scrollContainer.style.visibility = 'visible';
+        scrollContainer.style.opacity = '1';
+        scrollContainer.style.transform = 'translate(-50%, -50%) scale(1)';
 
         // Start typewriter effect after a small delay
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -186,8 +189,11 @@ function initScrollAnimations() {
 
     // Function to close scroll
     function closeScroll() {
-        scrollContainer.classList.remove('active');
-        scrollOverlay.classList.remove('active');
+        scrollContainer.style.visibility = 'hidden';
+        scrollContainer.style.opacity = '0';
+        scrollContainer.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        scrollOverlay.style.visibility = 'hidden';
+        scrollOverlay.style.opacity = '0';
         scrollText.textContent = ''; // Clear text when closing
     }
 
