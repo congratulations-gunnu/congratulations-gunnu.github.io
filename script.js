@@ -3,38 +3,163 @@
 (function () {
   const rocket = document.getElementById("rocket");
   const rocketWrapper = document.getElementById("rocket-wrapper");
+  const message = document.getElementById("message");
 
   if (!rocket || !rocketWrapper) return;
 
   // Convenience for throttling scroll events
   let ticking = false;
+  let exploded = false; // track if explosion already happened
+  let interactionStarted = false; // only move after user scrolls
+  const stars = []; // store star elements
 
   function onScroll() {
+    if (!interactionStarted) return;
     const docHeight = document.body.scrollHeight - window.innerHeight;
     const progress = docHeight > 0 ? Math.min(window.scrollY / docHeight, 1) : 0; // clamp 0-1
 
-    // Travel distance: move rocket slightly more than full viewport so it fully exits
-    const travel = window.innerHeight * 1.1 + rocket.offsetHeight;
-    const translateY = -progress * travel; // px units
+    if (!exploded) {
+      // Move rocket only until it explodes
+      const travel = window.innerHeight * 1.1 + rocket.offsetHeight;
+      const translateY = -progress * travel; // px units
 
-    // Directly transform the wrapper (keeps horizontal centering)
-    rocketWrapper.style.transform = `translateX(-50%) translateY(${translateY}px)`;
+      rocketWrapper.style.transform = `translateX(-50%) translateY(${translateY}px)`;
 
-    // No burst/explosion – just translate.
+      // Trigger explosion slightly before it leaves the viewport
+      if (progress >= 0.85) {
+        rocket.classList.add("explode");
+
+        // spawn cute star particles
+        spawnStars();
+
+        // After scatter animation, gather stars into text
+        setTimeout(() => {
+          gatherStarsIntoWord("CONGRATS");
+        }, 700); // wait for initial scatter to finish
+
+        // When explosion animation completes, reveal message
+        rocket.addEventListener(
+          "animationend",
+          () => {
+            if (message) {
+              message.classList.add("show");
+            }
+          },
+          { once: true }
+        );
+
+        exploded = true;
+      }
+    }
 
     ticking = false;
   }
 
   // Removed triggerBurst & explosion overlay handling.
 
-  // Scroll event listener with rAF throttling for smoother performance
+  // Wait for first user scroll
   window.addEventListener("scroll", () => {
+    if (!interactionStarted) {
+      interactionStarted = true;
+    }
     if (!ticking) {
       window.requestAnimationFrame(onScroll);
       ticking = true;
     }
-  });
+  }, { passive: true });
 
-  // Initialise position on page load (in case not at very top)
-  onScroll();
+  // Remove initial onScroll call (no auto move)
+
+  // === Star helpers ===
+  function spawnStars() {
+    const NUM_STARS = 80;
+    const rect = rocket.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+
+    for (let i = 0; i < NUM_STARS; i++) {
+      const star = document.createElement("span");
+      star.className = "star";
+      star.textContent = "✨"; // cute star emoji
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 60 + Math.random() * 120; // px
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+
+      star.style.left = `${originX}px`;
+      star.style.top = `${originY}px`;
+      star.style.setProperty("--dx", `${dx}px`);
+      star.style.setProperty("--dy", `${dy}px`);
+      star.style.fontSize = `${14 + Math.random() * 12}px`;
+
+      document.body.appendChild(star);
+
+      stars.push(star);
+
+      // Remove star element after animation ends
+      star.addEventListener(
+        "animationend",
+        () => {
+          star.remove();
+        },
+        { once: true }
+      );
+    }
+  }
+
+  // Map stars to positions forming the given word
+  function gatherStarsIntoWord(word) {
+    // build target points from canvas
+    const points = textToPoints(word, 300, 100, 6);
+    if (!points.length) return;
+
+    // Choose subset equal to number of stars
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      const p = points[i % points.length];
+
+      // convert canvas point to viewport center offset
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2 - 40;
+      const targetX = centerX + p.x - 150; // 300 canvas width /2
+      const targetY = centerY + p.y - 50; // 100 canvas height /2
+
+      requestAnimationFrame(() => {
+        // delay to ensure at end of scatter anim
+        star.style.transition = "transform 1.2s ease-in-out";
+        const currentRect = star.getBoundingClientRect();
+        const dx = targetX - currentRect.left;
+        const dy = targetY - currentRect.top;
+        star.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+    }
+  }
+
+  // Convert text to point array using canvas sampling
+  function textToPoints(text, w, h, gap) {
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `bold ${h * 0.7}px Arial`;
+    ctx.fillText(text, w / 2, h / 2);
+
+    const img = ctx.getImageData(0, 0, w, h).data;
+    const pts = [];
+    for (let y = 0; y < h; y += gap) {
+      for (let x = 0; x < w; x += gap) {
+        const alpha = img[(y * w + x) * 4 + 3];
+        if (alpha > 128) {
+          pts.push({ x, y });
+        }
+      }
+    }
+    return pts;
+  }
+
+  // we removed initial onScroll call so no auto movement
 })(); 
