@@ -2,9 +2,10 @@
 
 (function () {
   const rocket = document.getElementById("rocket");
+  const rocketWrapper = document.getElementById("rocket-wrapper");
   const explosion = document.getElementById("explosion");
 
-  if (!rocket || !explosion) return;
+  if (!rocket || !rocketWrapper || !explosion) return;
 
   // Convenience for throttling scroll events
   let ticking = false;
@@ -17,7 +18,8 @@
     const travel = window.innerHeight * 1.1 + rocket.offsetHeight;
     const translateY = -progress * travel; // px units
 
-    rocket.style.transform = `translateY(${translateY}px)`;
+    // Update vertical offset via CSS variable on the wrapper
+    rocketWrapper.style.setProperty("--ty", `${translateY}px`);
 
     // If near the top (>= 95% progress) and not yet burst
     if (progress >= 0.95 && !rocket.classList.contains("burst")) {

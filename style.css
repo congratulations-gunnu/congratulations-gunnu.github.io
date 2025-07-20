@@ -30,7 +30,8 @@ html, body {
   position: fixed;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(var(--ty, 0px));
+  transition: transform 0.1s linear;
   pointer-events: none; /* so it doesn't capture any touches */
   z-index: 1000;
 }
