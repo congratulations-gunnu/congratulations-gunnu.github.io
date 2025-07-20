@@ -18,8 +18,8 @@
     const travel = window.innerHeight * 1.1 + rocket.offsetHeight;
     const translateY = -progress * travel; // px units
 
-    // Update vertical offset via CSS variable on the wrapper
-    rocketWrapper.style.setProperty("--ty", `${translateY}px`);
+    // Directly transform the wrapper (keeps horizontal centering)
+    rocketWrapper.style.transform = `translateX(-50%) translateY(${translateY}px)`;
 
     // If near the top (>= 95% progress) and not yet burst
     if (progress >= 0.95 && !rocket.classList.contains("burst")) {
