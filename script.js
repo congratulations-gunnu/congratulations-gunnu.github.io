@@ -46,9 +46,12 @@
     // Number of dot positions we just created
     const dotCount = document.querySelectorAll('.dot').length;
 
-    // 2) Scatter stars outward with a slightly longer, softer ease-out
-    const scatterDuration = 1000; // ms – length of the scatter animation
-    spawnStars(scatterDuration, dotCount);
+    // 2) Scatter stars and adjust parameters for larger viewports
+    const isWide = window.innerWidth > 1200;
+    const scatterDuration = isWide ? 2200 : window.innerWidth > 800 ? 1800 : 1200; // ms – extra time for wide screens
+    const starFactor = isWide ? 0.70 : window.innerWidth > 800 ? 0.95 : 1;  // more stars for word formation
+    const starCount = Math.ceil(dotCount * starFactor);
+    spawnStars(scatterDuration, starCount);
 
     // 3) Assemble stars onto dot positions once scatter completes
     setTimeout(gatherStarsToDots, scatterDuration + 50);
@@ -97,15 +100,24 @@
       // Override default animation duration for consistent timing
       star.style.animation = `star-fly ${scatterMs}ms forwards ease-out`;
 
+      // Decide if this star should be hidden during the explosion and appear only during gather
+      const hideRatio = scatterMs > 1500 ? 0.35 : 0.25; // hide proportionally more on large screens to keep explosion light
+      const delayedAppear = Math.random() < hideRatio;
+      if (delayedAppear) {
+        star.dataset.delayed = "1";
+        star.style.opacity = "0";  // invisible during explosion
+      }
+
       document.body.appendChild(star);
 
       stars.push(star);
 
-      // Remove star element after animation ends ***changed: keep star alive for rearrangement***
-      // Give the stars time to rearrange into the word before cleaning up.
+      // Remove star element well after all animations so it lingers on-screen
+      const gatherEstimate = window.innerWidth > 1200 ? 3000 : window.innerWidth > 800 ? 2200 : 1600;
+      const removalDelay  = scatterMs + gatherEstimate + 4000; // extra 4 s of linger time
       setTimeout(() => {
         star.remove();
-      }, 5000); // remove 5s after creation
+      }, removalDelay);
     }
   }
 
@@ -113,6 +125,9 @@
   function gatherStarsToDots() {
     const dotEls = Array.from(document.querySelectorAll('.dot'));
     if (!dotEls.length || !stars.length) return;
+
+    // Duration for the gather animation scales with viewport width (even longer now)
+    const gatherMs = window.innerWidth > 1200 ? 3000 : window.innerWidth > 800 ? 2200 : 1600;
 
     // Shuffle dots so mapping looks more random
     for (let i = dotEls.length - 1; i > 0; i--) {
@@ -137,23 +152,25 @@
       star.style.left = `${current.left}px`;
       star.style.top  = `${current.top}px`;
 
-      // Next frame – animate into place
+      // Next frame – animate into place (also fade-in delayed stars)
       requestAnimationFrame(() => {
-        // Glide stars into position with a longer, smoother curve
-        star.style.transition = "left 1.6s cubic-bezier(0.25,0.1,0.25,1), top 1.6s cubic-bezier(0.25,0.1,0.25,1)";
+        // Glide stars into position; duration adapts to screen size
+        star.style.transition = `left ${gatherMs}ms cubic-bezier(0.25,0.1,0.25,1), top ${gatherMs}ms cubic-bezier(0.25,0.1,0.25,1)`;
         star.style.left = `${targetX}px`;
         star.style.top  = `${targetY}px`;
+
+        // If this star was hidden during the explosion, fade it in now
+        if (star.dataset.delayed === "1") {
+          star.style.transition += ", opacity 0.8s ease-in";
+          star.style.opacity = "1";
+        }
       });
     }
 
-    // Once the stars have mostly reached their destinations, gently fade the hidden dots
+    // Optionally fade out the static dots once stars settle
     setTimeout(() => {
       dotEls.forEach(d => d.style.opacity = 0);
-      // Reveal the congratulatory text element with a fade-in
-      if (message) {
-        message.classList.add('show');
-      }
-    }, 1600);
+    }, gatherMs - 200);
   }
 
   // Map stars to positions forming the given word
@@ -308,7 +325,8 @@
     // Sample points from the rendered canvas
     const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight).data;
     const points = [];
-    const gap = 4; // even denser sampling for clearer letters
+    // Choose sampling density based on screen size – larger gap = fewer dots
+    const gap = window.innerWidth > 1200 ? 8 : window.innerWidth > 800 ? 6 : 4;
     for (let y = 0; y < canvasHeight; y += gap) {
       for (let x = 0; x < canvasWidth; x += gap) {
         if (imgData[(y * canvasWidth + x) * 4 + 3] > 128) {
