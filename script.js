@@ -43,14 +43,15 @@
     // 1) Draw static dot outline of the word
     drawLetterOutline("Congratulations");
 
-    // 2) Spawn scattering stars from rocket position
-    spawnStars();
+    // Number of dot positions we just created
+    const dotCount = document.querySelectorAll('.dot').length;
 
-    // 3) After the scatter animation, move stars onto each dot location
-    //    star-fly animation duration = 0.6s; wait 1.2s to ensure scatter is done
-    setTimeout(() => {
-      gatherStarsToDots();
-    }, 1200);
+    // 2) Spawn scattering stars; create exactly one star per dot for perfect fill
+    const scatterDuration = 700; // ms – length of the scatter animation
+    spawnStars(scatterDuration, dotCount);
+
+    // 3) Assemble stars onto dot positions once scatter completes
+    setTimeout(gatherStarsToDots, scatterDuration + 50);
 
     exploded = true;
   }
@@ -71,19 +72,19 @@
   // Remove initial onScroll call (no auto move)
 
   // === Star helpers ===
-  function spawnStars() {
-    const NUM_STARS = 700; // more stars for higher-resolution letters
-    const rect = rocket.getBoundingClientRect();
-    const originX = rect.left + rect.width / 2;
-    const originY = rect.top + rect.height / 2;
+  function spawnStars(scatterMs = 600, numStars = 400) {
+    const NUM_STARS = numStars; // align star count to dot count for perfect coverage
+    // Spawn from the center of the screen so the explosion looks centered
+    const originX = window.innerWidth / 2;
+    const originY = window.innerHeight / 2 - 40; // slight upward bias like word center
 
     for (let i = 0; i < NUM_STARS; i++) {
       const star = document.createElement("span");
       star.className = "star";
-      star.textContent = "✨"; // cute star emoji
+      star.textContent = "✦"; // smaller sparkle glyph
 
       const angle = Math.random() * Math.PI * 2;
-      const distance = 60 + Math.random() * 120; // px
+      const distance = 40 + Math.random() * 120; // px (slightly tighter burst)
       const dx = Math.cos(angle) * distance;
       const dy = Math.sin(angle) * distance;
 
@@ -91,7 +92,10 @@
       star.style.top = `${originY}px`;
       star.style.setProperty("--dx", `${dx}px`);
       star.style.setProperty("--dy", `${dy}px`);
-      star.style.fontSize = `${14 + Math.random() * 12}px`;
+      star.style.fontSize = `${8 + Math.random() * 4}px`; // small, consistent stars
+
+      // Override default animation duration for consistent timing
+      star.style.animation = `star-fly ${scatterMs}ms forwards ease-out`;
 
       document.body.appendChild(star);
 
