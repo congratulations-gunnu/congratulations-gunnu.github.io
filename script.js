@@ -3,9 +3,8 @@
 (function () {
   const rocket = document.getElementById("rocket");
   const rocketWrapper = document.getElementById("rocket-wrapper");
-  const explosion = document.getElementById("explosion");
 
-  if (!rocket || !rocketWrapper || !explosion) return;
+  if (!rocket || !rocketWrapper) return;
 
   // Convenience for throttling scroll events
   let ticking = false;
@@ -21,30 +20,12 @@
     // Directly transform the wrapper (keeps horizontal centering)
     rocketWrapper.style.transform = `translateX(-50%) translateY(${translateY}px)`;
 
-    // If near the top (>= 95% progress) and not yet burst
-    if (progress >= 0.95 && !rocket.classList.contains("burst")) {
-      triggerBurst();
-    }
+    // No burst/explosion – just translate.
 
     ticking = false;
   }
 
-  function triggerBurst() {
-    // Make rocket burst
-    rocket.classList.add("burst");
-
-    // Show explosion overlay
-    explosion.classList.add("active");
-
-    // Clean up explosion overlay after animation ends
-    explosion.addEventListener(
-      "animationend",
-      () => {
-        explosion.classList.remove("active");
-      },
-      { once: true }
-    );
-  }
+  // Removed triggerBurst & explosion overlay handling.
 
   // Scroll event listener with rAF throttling for smoother performance
   window.addEventListener("scroll", () => {
