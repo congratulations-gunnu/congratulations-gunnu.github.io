@@ -22,7 +22,10 @@
 
       // Explode when rocket touches top edge
       const rect = rocket.getBoundingClientRect();
-      if (rect.top <= 0) {
+      // Trigger explosion once the rocket has ascended past roughly 65% of the
+      // viewport height (i.e. its top edge is within the top 35% band).
+      const triggerThreshold = window.innerHeight * 0.35;
+      if (rect.top <= triggerThreshold) {
         triggerExplosion();
       }
     }
