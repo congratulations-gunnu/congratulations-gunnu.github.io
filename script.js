@@ -46,8 +46,8 @@
     // Number of dot positions we just created
     const dotCount = document.querySelectorAll('.dot').length;
 
-    // 2) Spawn scattering stars; create exactly one star per dot for perfect fill
-    const scatterDuration = 700; // ms – length of the scatter animation
+    // 2) Scatter stars outward with a slightly longer, softer ease-out
+    const scatterDuration = 1000; // ms – length of the scatter animation
     spawnStars(scatterDuration, dotCount);
 
     // 3) Assemble stars onto dot positions once scatter completes
@@ -139,16 +139,21 @@
 
       // Next frame – animate into place
       requestAnimationFrame(() => {
-        star.style.transition = "left 1.2s ease-in-out, top 1.2s ease-in-out";
+        // Glide stars into position with a longer, smoother curve
+        star.style.transition = "left 1.6s cubic-bezier(0.25,0.1,0.25,1), top 1.6s cubic-bezier(0.25,0.1,0.25,1)";
         star.style.left = `${targetX}px`;
         star.style.top  = `${targetY}px`;
       });
     }
 
-    // Optionally fade out the static dots once stars settle
+    // Once the stars have mostly reached their destinations, gently fade the hidden dots
     setTimeout(() => {
       dotEls.forEach(d => d.style.opacity = 0);
-    }, 1400);
+      // Reveal the congratulatory text element with a fade-in
+      if (message) {
+        message.classList.add('show');
+      }
+    }, 1600);
   }
 
   // Map stars to positions forming the given word
