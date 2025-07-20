@@ -14,45 +14,40 @@
   const stars = []; // store star elements
 
   function onScroll() {
-    if (!interactionStarted) return;
-    const docHeight = document.body.scrollHeight - window.innerHeight;
-    const progress = docHeight > 0 ? Math.min(window.scrollY / docHeight, 1) : 0; // clamp 0-1
-
+     if (!interactionStarted) return;
     if (!exploded) {
-      // Move rocket only until it explodes
-      const travel = window.innerHeight * 1.1 + rocket.offsetHeight;
-      const translateY = -progress * travel; // px units
-
+      // Translate exactly with scroll (1:1)
+      const translateY = -window.scrollY;
       rocketWrapper.style.transform = `translateX(-50%) translateY(${translateY}px)`;
 
-      // Trigger explosion slightly before it leaves the viewport
-      if (progress >= 0.85) {
-        rocket.classList.add("explode");
-
-        // spawn cute star particles
-        spawnStars();
-
-        // After scatter animation, gather stars into text
-        setTimeout(() => {
-          gatherStarsIntoWord("CONGRATS");
-        }, 700); // wait for initial scatter to finish
-
-        // When explosion animation completes, reveal message
-        rocket.addEventListener(
-          "animationend",
-          () => {
-            if (message) {
-              message.classList.add("show");
-            }
-          },
-          { once: true }
-        );
-
-        exploded = true;
+      // Explode when rocket touches top edge
+      const rect = rocket.getBoundingClientRect();
+      if (rect.top <= 0) {
+        triggerExplosion();
       }
     }
 
     ticking = false;
+  }
+
+  function triggerExplosion() {
+     if (exploded) return;
+
+    // spawn cute star particles
+    spawnStars();
+
+    // instantly hide rocket so no wiggle
+    rocketWrapper.style.display = "none";
+
+    // After scatter animation, gather stars into text
+    setTimeout(() => {
+      gatherStarsIntoWord("CONGRATS");
+      if (message) {
+        message.classList.add("show");
+      }
+    }, 700);
+
+    exploded = true;
   }
 
   // Removed triggerBurst & explosion overlay handling.
