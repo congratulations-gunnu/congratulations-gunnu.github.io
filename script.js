@@ -36,17 +36,11 @@
   function triggerExplosion() {
      if (exploded) return;
 
-    // spawn cute star particles
-    spawnStars();
-
-    // instantly hide rocket so no wiggle
+    // For debugging: instead of star animation, draw dots showing the sampled
+    // pixels that form the word so we can visually verify the outline.
     rocketWrapper.style.display = "none";
 
-    // After scatter animation, gather stars into text
-    setTimeout(() => {
-      gatherStarsIntoWord("CONGRATULATIONS");
-      // Removed separate message overlay
-    }, 700);
+    drawLetterOutline("Congratulations");
 
     exploded = true;
   }
@@ -68,7 +62,7 @@
 
   // === Star helpers ===
   function spawnStars() {
-    const NUM_STARS = 80;
+    const NUM_STARS = 700; // more stars for higher-resolution letters
     const rect = rocket.getBoundingClientRect();
     const originX = rect.left + rect.width / 2;
     const originY = rect.top + rect.height / 2;
@@ -93,46 +87,77 @@
 
       stars.push(star);
 
-      // Remove star element after animation ends
-      star.addEventListener(
-        "animationend",
-        () => {
-          star.remove();
-        },
-        { once: true }
-      );
+      // Remove star element after animation ends ***changed: keep star alive for rearrangement***
+      // Give the stars time to rearrange into the word before cleaning up.
+      setTimeout(() => {
+        star.remove();
+      }, 5000); // remove 5s after creation
     }
   }
 
   // Map stars to positions forming the given word
   function gatherStarsIntoWord(word) {
-    // Dynamically size the canvas according to word length so longer words fit.
-    const canvasWidth = Math.max(400, word.length * 40); // 40-px per char (min 400)
-    const canvasHeight = 120;
-    // build target points from canvas
-    const points = textToPoints(word, canvasWidth, canvasHeight, 6);
+    const baseHeight = 120;  // baseline letter height
+
+    // 1. Measure raw text width at baseline height
+    const measureCanvas = document.createElement("canvas");
+    const mCtx = measureCanvas.getContext("2d");
+    mCtx.font = `bold ${baseHeight * 0.7}px Arial`;
+    const rawWidth = mCtx.measureText(word).width;
+
+    // 2. Uniformly scale word if it would exceed 80% viewport width
+    const maxWidth = window.innerWidth * 0.8;
+    const scaleFactor = rawWidth + 40 > maxWidth ? maxWidth / (rawWidth + 40) : 1;
+
+    const canvasHeight = Math.round(baseHeight * scaleFactor);
+    const canvasWidth  = Math.ceil((rawWidth + 40) * scaleFactor);
+
+    // 3. Sample pixels (gap 5 for balance of detail / perf)
+    const points = textToPoints(word, canvasWidth, canvasHeight, 5);
     if (!points.length) return;
+
+    // Shuffle points so stars map across the whole glyph set randomly
+    const shuffled = points.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
 
     // Choose subset equal to number of stars
     for (let i = 0; i < stars.length; i++) {
       const star = stars[i];
-      const p = points[i % points.length];
+      const p = shuffled[i % shuffled.length];
 
       // convert canvas point to viewport center offset
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2 - 40;
-      const targetX = centerX + p.x - canvasWidth / 2; // center horizontally
+      const targetX = centerX + p.x - canvasWidth / 2;  // center horizontally
       const targetY = centerY + p.y - canvasHeight / 2; // center vertically
 
+      star.dataset.tx = targetX;      //  <-- add this
+      star.dataset.ty = targetY;      //  <-- add this
+
+      // Step 1: freeze star at its scatter-end position using left/top coordinates
+      const current = star.getBoundingClientRect();
+      star.style.transition = "none";
+      star.style.transform = "none"; // clear scatter transform
+      star.style.left = `${current.left}px`;
+      star.style.top  = `${current.top}px`;
+
+      // Step 2 (next frame): animate left/top to the target pixel
       requestAnimationFrame(() => {
-        // delay to ensure at end of scatter anim
-        star.style.transition = "transform 1.2s ease-in-out";
-        const currentRect = star.getBoundingClientRect();
-        const dx = targetX - currentRect.left;
-        const dy = targetY - currentRect.top;
-        star.style.transform = `translate(${dx}px, ${dy}px)`;
+        star.style.transition = "left 1.4s ease-in-out, top 1.4s ease-in-out";
+        star.style.left = `${targetX}px`;
+        star.style.top  = `${targetY}px`;
       });
     }
+
+    // After assigning destinations for all stars, dump debug info once
+    window._dbg.__lastPoints = points;      // keep a copy for the console
+    saveJSON({
+      letterPoints : points,
+      starTargets  : stars.map(s => [Number(s.dataset.tx), Number(s.dataset.ty)])
+    });
   }
 
   // Convert text to point array using canvas sampling
@@ -161,4 +186,85 @@
   }
 
   // we removed initial onScroll call so no auto movement
+
+   // DEBUG EXPOSE
+   /* ---------- DEBUG HOOKS ---------- */
+   if (!window._dbg) window._dbg = {};
+   // expose helpers the console snippet expects
+   window._dbg.textToPoints = textToPoints;
+   window._dbg.stars        = stars;
+
+   function saveJSON(obj, filename = 'stars-debug.json') {
+     const blob = new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+     const a = document.createElement('a');
+     a.href = URL.createObjectURL(blob);
+     a.download = filename;
+     a.click();
+     URL.revokeObjectURL(a.href);
+   }
+   /* --------------------------------- */
+
+  // Render fixed dots at every sample point so we can see the word outline
+  function drawLetterOutline(word) {
+    const baseHeight = 360; // slightly larger letters
+    const mCv = document.createElement("canvas");
+    const mCtx = mCv.getContext("2d");
+    mCtx.font = `bold ${baseHeight * 0.7}px Arial`;
+    const rawWidth = mCtx.measureText(word).width;
+    const letterSpacing = 30; // moderate spacing between characters
+
+    // Re-measure width by summing individual glyph widths + spacing
+    let contentWidth = 0;
+    for (const ch of word) {
+      contentWidth += mCtx.measureText(ch).width + letterSpacing;
+    }
+    contentWidth -= letterSpacing; // no spacing after last char
+
+    // Scale uniformly to fit in 90% viewport width
+    const maxWidth = window.innerWidth * 0.9;
+    const scaleFactor = contentWidth + 40 > maxWidth ? maxWidth / (contentWidth + 40) : 1;
+
+    const canvasHeight = Math.round(baseHeight * scaleFactor);
+    const canvasWidth  = Math.ceil((contentWidth + 40) * scaleFactor);
+
+    // Build canvas and draw each char with spacing
+    const tmp = document.createElement("canvas");
+    tmp.width = canvasWidth;
+    tmp.height = canvasHeight;
+    const ctx = tmp.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    ctx.font = `bold ${canvasHeight * 0.7}px Arial`;
+
+    let cursorX = 0;
+    const scaledSpacing = letterSpacing * scaleFactor;
+    for (const ch of word) {
+      ctx.fillText(ch, cursorX, canvasHeight / 2);
+      cursorX += ctx.measureText(ch).width + scaledSpacing;
+    }
+
+    // Sample points from the rendered canvas
+    const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+    const points = [];
+    const gap = 4; // even denser sampling for clearer letters
+    for (let y = 0; y < canvasHeight; y += gap) {
+      for (let x = 0; x < canvasWidth; x += gap) {
+        if (imgData[(y * canvasWidth + x) * 4 + 3] > 128) {
+          points.push({ x, y });
+        }
+      }
+    }
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2 - 40;
+
+    points.forEach(p => {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.left = `${centerX + p.x - canvasWidth / 2}px`;
+      dot.style.top  = `${centerY + p.y - canvasHeight / 2}px`;
+      document.body.appendChild(dot);
+    });
+  }
 })(); 
