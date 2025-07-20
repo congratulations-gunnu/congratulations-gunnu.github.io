@@ -44,10 +44,8 @@
 
     // After scatter animation, gather stars into text
     setTimeout(() => {
-      gatherStarsIntoWord("CONGRATS");
-      if (message) {
-        message.classList.add("show");
-      }
+      gatherStarsIntoWord("CONGRATULATIONS");
+      // Removed separate message overlay
     }, 700);
 
     exploded = true;
@@ -108,8 +106,11 @@
 
   // Map stars to positions forming the given word
   function gatherStarsIntoWord(word) {
+    // Dynamically size the canvas according to word length so longer words fit.
+    const canvasWidth = Math.max(400, word.length * 40); // 40-px per char (min 400)
+    const canvasHeight = 120;
     // build target points from canvas
-    const points = textToPoints(word, 300, 100, 6);
+    const points = textToPoints(word, canvasWidth, canvasHeight, 6);
     if (!points.length) return;
 
     // Choose subset equal to number of stars
@@ -120,8 +121,8 @@
       // convert canvas point to viewport center offset
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2 - 40;
-      const targetX = centerX + p.x - 150; // 300 canvas width /2
-      const targetY = centerY + p.y - 50; // 100 canvas height /2
+      const targetX = centerX + p.x - canvasWidth / 2; // center horizontally
+      const targetY = centerY + p.y - canvasHeight / 2; // center vertically
 
       requestAnimationFrame(() => {
         // delay to ensure at end of scatter anim
