@@ -40,7 +40,17 @@
     // pixels that form the word so we can visually verify the outline.
     rocketWrapper.style.display = "none";
 
+    // 1) Draw static dot outline of the word
     drawLetterOutline("Congratulations");
+
+    // 2) Spawn scattering stars from rocket position
+    spawnStars();
+
+    // 3) After the scatter animation, move stars onto each dot location
+    //    star-fly animation duration = 0.6s; wait 1.2s to ensure scatter is done
+    setTimeout(() => {
+      gatherStarsToDots();
+    }, 1200);
 
     exploded = true;
   }
@@ -93,6 +103,48 @@
         star.remove();
       }, 5000); // remove 5s after creation
     }
+  }
+
+  // === Assemble stars so each sits on top of a dot ===
+  function gatherStarsToDots() {
+    const dotEls = Array.from(document.querySelectorAll('.dot'));
+    if (!dotEls.length || !stars.length) return;
+
+    // Shuffle dots so mapping looks more random
+    for (let i = dotEls.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [dotEls[i], dotEls[j]] = [dotEls[j], dotEls[i]];
+    }
+
+    const dotCount = dotEls.length;
+
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      const dot  = dotEls[i % dotCount];
+      const rect = dot.getBoundingClientRect();
+      const targetX = rect.left + rect.width / 2;
+      const targetY = rect.top  + rect.height / 2;
+
+      // Freeze current scattered position
+      const current = star.getBoundingClientRect();
+      star.style.transition = "none";
+      star.style.transform  = "none";
+      star.style.animation  = "none";  // cancel ongoing scatter animation
+      star.style.left = `${current.left}px`;
+      star.style.top  = `${current.top}px`;
+
+      // Next frame – animate into place
+      requestAnimationFrame(() => {
+        star.style.transition = "left 1.2s ease-in-out, top 1.2s ease-in-out";
+        star.style.left = `${targetX}px`;
+        star.style.top  = `${targetY}px`;
+      });
+    }
+
+    // Optionally fade out the static dots once stars settle
+    setTimeout(() => {
+      dotEls.forEach(d => d.style.opacity = 0);
+    }, 1400);
   }
 
   // Map stars to positions forming the given word
