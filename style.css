@@ -80,6 +80,7 @@ html, body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 1600;
+  opacity: 0; /* hide dots so only stars are visible */
 }
 
 /* Add a blazing flash behind the rocket */
